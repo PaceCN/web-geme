@@ -17,7 +17,7 @@
 ## 技术结构
 
 ```text
-web-demo/
+0.0.1/
 ├── Cargo.toml              # Rust / Leptos / wasm-bindgen 依赖
 ├── Trunk.toml              # Trunk 构建配置
 ├── index.html              # Trunk 入口
@@ -45,12 +45,14 @@ trunk serve --open
 Cloudflare Pages 可以这样配：
 
 ```text
-Project root: 0.0.1/web-demo
-Build command: rustup target add wasm32-unknown-unknown && cargo install trunk && trunk build --release
+Project root: 0.0.1
+Build command: bash scripts/cloudflare-pages-build.sh
 Build output directory: dist
 ```
 
-注意不要把输出目录配置成 `0.0.1/web-demo` 或仓库根目录。`index.html` 是 Trunk 源入口，只有构建后的 `dist/index.html` 才会自动注入 WASM/JS 脚本。
+注意不要把输出目录配置成 `0.0.1` 或仓库根目录。`index.html` 是 Trunk 源入口，只有构建后的 `dist/index.html` 才会自动注入 WASM/JS 脚本。
+
+Cloudflare Pages 默认构建镜像里可能没有 `rustup`。`scripts/cloudflare-pages-build.sh` 会先安装 Rust stable，再添加 `wasm32-unknown-unknown` 目标、安装 Trunk，并执行 `trunk build --release`。
 
 如果部署后 F12 看到 `Manifest: Line: 1, column: 1, Syntax error.`，通常是 manifest 请求被 SPA 回退成了 `index.html`。这一版已经把 manifest 改到 `public/manifest.webmanifest`，并补了 Cloudflare 的 manifest content-type。
 
