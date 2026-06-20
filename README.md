@@ -22,11 +22,33 @@
 ├── Trunk.toml              # Trunk 构建配置
 ├── index.html              # Trunk 入口
 ├── styles.css              # 手机竖屏样式
+├── sucai.md                # 素材清单：分辨率、路径、替换说明
 ├── _headers                # Cloudflare Pages 响应头
 ├── _redirects              # Cloudflare Pages SPA 回退
-├── src/main.rs             # Leptos 应用和游戏逻辑
-└── public/                 # PWA、asset_manifest、Cloudflare Pages 文件
+├── src/
+│   ├── main.rs             # Leptos 应用、状态分发、当前小游戏逻辑
+│   ├── models/             # 后续共享数据模型目录
+│   └── modules/            # 后续小游戏模块目录
+└── public/                 # PWA、asset_manifest、素材和 Cloudflare Pages 文件
 ```
+
+## 主体框架完整性
+
+当前 Web 版主体框架已经具备：
+
+- 移动端首屏应用壳：顶部玩家状态、内容区、底部 5 栏导航
+- 居民契约：订单列表、材料校验、交付奖励
+- 庄园内务：清扫任务、任务进度、小游戏入口
+- 2048 小游戏：4x4 固定棋盘、手机滑动、结算奖励、结算后自动重开
+- 物资背包：物品展示、药剂使用
+- 集市商店：官方商店、玩家市集买入/挂牌
+- 个人信息：玩家资产、体力、小游戏最高分
+- 本地状态持久化：`localStorage`
+- Cloudflare Pages 静态部署脚本
+- PWA 基础文件：manifest、service worker、headers、redirects
+- 素材目录：`public/assets/`
+
+当前还没有真实后端数据，所有数据仍在前端本地模拟。后续接入 Axum 后端时，应优先替换初始化状态和动作提交逻辑。
 
 ## 本地运行
 
@@ -72,3 +94,53 @@ POST /api/v1/garden/action
 ```
 
 接口建议见 `API_CONTRACT.md`。
+
+## 后续游戏模块接口
+
+后续新增小游戏时，建议先补模型，再接模块：
+
+```text
+src/models/
+├── player.rs
+├── inventory.rs
+├── order.rs
+├── task.rs
+└── game.rs
+
+src/modules/
+├── game_2048.rs
+├── match3.rs
+└── make10.rs
+```
+
+建议统一小游戏结算结构：
+
+```rust
+pub struct GameRunResult {
+    pub game_id: String,
+    pub score: i32,
+    pub rewards: Vec<GameReward>,
+}
+
+pub struct GameReward {
+    pub item_id: String,
+    pub count: i32,
+}
+```
+
+主界面只调用统一动作：
+
+```text
+Action::FinishGame(game_id, score)
+```
+
+后续接后端时对应：
+
+```text
+POST /api/v1/garden/action
+{
+  "action": "finish_minigame",
+  "game_id": "2048",
+  "score": 128
+}
+```

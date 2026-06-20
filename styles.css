@@ -647,3 +647,250 @@ h1 {
     overflow: hidden;
   }
 }
+
+/* UI refresh: asset-backed mobile game shell */
+body {
+  background:
+    linear-gradient(180deg, rgba(220, 239, 216, 0.86), rgba(255, 250, 236, 0.92)),
+    url("public/assets/ui/paper-texture.svg");
+}
+
+.app-shell {
+  position: relative;
+  overflow: hidden;
+  background:
+    linear-gradient(180deg, rgba(255, 253, 247, 0.9), rgba(241, 247, 238, 0.96)),
+    url("public/assets/ui/paper-texture.svg");
+}
+
+.top-status {
+  position: relative;
+  overflow: hidden;
+  min-height: 164px;
+  padding: max(16px, env(safe-area-inset-top)) 16px 14px;
+  border: 0;
+  border-radius: 0 0 8px 8px;
+  background:
+    linear-gradient(180deg, rgba(31, 74, 41, 0.08), rgba(255, 255, 255, 0.92)),
+    url("public/assets/ui/bg-garden-terrace.svg") center top / cover no-repeat;
+  box-shadow: 0 10px 24px rgba(48, 67, 43, 0.18);
+}
+
+.top-status::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(255, 253, 238, 0.08), rgba(255, 253, 247, 0.88));
+}
+
+.top-status > * {
+  position: relative;
+  z-index: 1;
+}
+
+.top-main {
+  grid-template-columns: 48px minmax(0, 1fr) auto;
+  padding: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.68);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.78);
+  backdrop-filter: blur(10px);
+}
+
+.avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #2f6d3e, #7aa95c);
+}
+
+.coins {
+  min-width: 76px;
+  border: 1px solid rgba(146, 95, 43, 0.16);
+  border-radius: 8px;
+  box-shadow: inset 0 -2px 0 rgba(91, 61, 22, 0.12);
+}
+
+.meter-grid {
+  padding: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.66);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.76);
+}
+
+.content-shell {
+  padding: 12px 12px 94px;
+}
+
+.hero-card,
+.card,
+.order-card,
+.item-card,
+.profile-card {
+  border-radius: 8px;
+  border-color: rgba(91, 112, 87, 0.18);
+  box-shadow: 0 8px 20px rgba(47, 68, 45, 0.1);
+}
+
+.hero-card {
+  position: relative;
+  min-height: 112px;
+  overflow: hidden;
+  padding: 14px 128px 14px 14px;
+}
+
+.hero-card::after {
+  content: "";
+  position: absolute;
+  right: -12px;
+  bottom: -8px;
+  width: 152px;
+  height: 90px;
+  background-position: center;
+  background-size: contain;
+  background-repeat: no-repeat;
+  filter: drop-shadow(0 8px 14px rgba(58, 52, 40, 0.14));
+}
+
+.hero-card > * {
+  position: relative;
+  z-index: 1;
+}
+
+.contract-hero::after {
+  background-image: url("public/assets/ui/contract-board.svg");
+}
+
+.chores-hero::after {
+  background-image: url("public/assets/ui/chore-minigames.svg");
+}
+
+.backpack-hero::after {
+  background-image: url("public/assets/ui/backpack-room.svg");
+}
+
+.shop-hero::after {
+  background-image: url("public/assets/ui/market-stall.svg");
+}
+
+.profile-hero::after {
+  background-image: url("public/assets/ui/profile-passport.svg");
+}
+
+.hero-card.gold {
+  background:
+    linear-gradient(90deg, rgba(255, 253, 241, 0.98), rgba(255, 245, 194, 0.84)),
+    url("public/assets/ui/paper-texture.svg");
+}
+
+.hero-card.green {
+  background:
+    linear-gradient(90deg, rgba(232, 245, 233, 0.98), rgba(250, 255, 247, 0.88)),
+    url("public/assets/ui/paper-texture.svg");
+}
+
+.hero-card.orange {
+  background:
+    linear-gradient(90deg, rgba(255, 243, 224, 0.98), rgba(255, 255, 255, 0.9)),
+    url("public/assets/ui/paper-texture.svg");
+}
+
+.hero-icon,
+.round-icon,
+.tile-icon,
+.close,
+.btn,
+.subtab,
+.tag,
+.profile-stat {
+  border-radius: 8px;
+}
+
+.order-card,
+.card,
+.item-card,
+.profile-card {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(255, 253, 247, 0.94)),
+    url("public/assets/ui/paper-texture.svg");
+}
+
+.row-card {
+  grid-template-columns: 48px minmax(0, 1fr) auto;
+}
+
+.row-card > div:nth-child(2),
+.order-head > div:nth-child(2) {
+  min-width: 0;
+}
+
+.tile-icon {
+  width: 48px;
+  height: 48px;
+  border: 1px solid rgba(47, 109, 62, 0.12);
+  background: linear-gradient(180deg, #f7fff2, #edf6e8);
+  font-size: 20px;
+}
+
+.bottom-tabs {
+  border-top: 1px solid rgba(54, 83, 53, 0.16);
+  background: rgba(255, 253, 247, 0.96);
+}
+
+.nav-btn {
+  border-radius: 8px;
+}
+
+.nav-btn.active {
+  background: linear-gradient(180deg, #e8f5e9, #fff8d9);
+  box-shadow: inset 0 -2px 0 rgba(47, 109, 62, 0.14);
+}
+
+.game-panel {
+  width: min(100%, 380px);
+  border-radius: 8px;
+  background:
+    linear-gradient(180deg, #fffdf7, #f2eee7),
+    url("public/assets/ui/paper-texture.svg");
+}
+
+.board {
+  --board-size: min(320px, calc(100vw - 56px));
+  grid-template-columns: repeat(4, 1fr);
+  grid-template-rows: repeat(4, 1fr);
+  flex: 0 0 var(--board-size);
+  width: var(--board-size);
+  height: var(--board-size);
+  margin: 0 auto;
+  gap: 8px;
+  border-radius: 8px;
+  background: #a99b8f;
+}
+
+.tile {
+  min-width: 0;
+  min-height: 0;
+  border-radius: 8px;
+  font-size: 26px;
+  line-height: 1;
+}
+
+.game-modal .actions {
+  justify-content: center;
+}
+
+@media (max-width: 380px) {
+  .hero-card {
+    min-height: 104px;
+    padding-right: 104px;
+  }
+
+  .hero-card::after {
+    width: 124px;
+    height: 76px;
+  }
+
+  .tile {
+    font-size: 22px;
+  }
+}

@@ -175,7 +175,7 @@ fn App() -> impl IntoView {
 
     let content = move || match active_tab.get() {
         Tab::Orders => orders_tab(state, toast),
-        Tab::Chores => chores_tab(state, toast, chores_subtab, open_game),
+        Tab::Chores => chores_tab(state, toast, chores_subtab, open_game, game),
         Tab::Backpack => backpack_tab(state, toast, active_tab),
         Tab::Shop => shop_tab(state, toast, shop_subtab),
         Tab::Profile => profile_tab(state, toast),
@@ -325,7 +325,7 @@ fn GardenCanvas(
 
 fn orders_tab(state: RwSignal<GameState>, toast: RwSignal<String>) -> View {
     view! {
-        <div class="hero-card gold">
+        <div class="hero-card gold contract-hero">
             <div class="hero-row">
                 <div class="hero-icon">"契"</div>
                 <div>
@@ -401,6 +401,7 @@ fn chores_tab(
     toast: RwSignal<String>,
     subtab: RwSignal<i32>,
     open_game: RwSignal<bool>,
+    game: RwSignal<Game2048>,
 ) -> View {
     view! {
         <div class="subtabs">
@@ -408,16 +409,21 @@ fn chores_tab(
             <button class=move || if subtab.get() == 1 { "subtab active" } else { "subtab" } on:click=move |_| subtab.set(1) type="button">"玩法说明"</button>
         </div>
         {move || if subtab.get() == 0 {
-            chores_work_tab(state, toast, open_game)
+            chores_work_tab(state, toast, open_game, game)
         } else {
             chores_help_tab()
         }}
     }.into_view()
 }
 
-fn chores_work_tab(state: RwSignal<GameState>, toast: RwSignal<String>, open_game: RwSignal<bool>) -> View {
+fn chores_work_tab(
+    state: RwSignal<GameState>,
+    toast: RwSignal<String>,
+    open_game: RwSignal<bool>,
+    game: RwSignal<Game2048>,
+) -> View {
     view! {
-        <div class="hero-card green">
+        <div class="hero-card green chores-hero">
             <h2 class="section-title">"互动深度清洁秘境（趣味小游戏）"</h2>
             <p class="muted">"觉得精力值不够用了？挑战免费益智除扫小游戏，免消耗精力，大量掉落指定原材料。"</p>
         </div>
@@ -429,7 +435,16 @@ fn chores_work_tab(state: RwSignal<GameState>, toast: RwSignal<String>, open_gam
                     <p class="muted">"对应原材料：干枯杂草 / 金色落叶"</p>
                     <span class="tag warn">{move || state.with(|s| format!("历史最高分: {}", s.player.score_2048))}</span>
                 </div>
-                <button class="btn" on:click=move |_| open_game.set(true) type="button">"立即扫除"</button>
+                <button
+                    class="btn"
+                    on:click=move |_| {
+                        game.set(Game2048::new());
+                        open_game.set(true);
+                    }
+                    type="button"
+                >
+                    "立即扫除"
+                </button>
             </article>
             <article class="card row-card">
                 <div class="tile-icon">"落"</div>
@@ -515,7 +530,7 @@ fn chores_help_tab() -> View {
 
 fn backpack_tab(state: RwSignal<GameState>, toast: RwSignal<String>, active_tab: RwSignal<Tab>) -> View {
     view! {
-        <div class="hero-card gold">
+        <div class="hero-card gold backpack-hero">
             <div class="hero-row">
                 <div class="hero-icon">"仓"</div>
                 <div>
@@ -577,7 +592,7 @@ fn shop_tab(state: RwSignal<GameState>, toast: RwSignal<String>, subtab: RwSigna
 
 fn shop_official_tab(state: RwSignal<GameState>, toast: RwSignal<String>) -> View {
     view! {
-        <div class="hero-card orange">
+        <div class="hero-card orange shop-hero">
             <div class="hero-row">
                 <div class="hero-icon">"店"</div>
                 <div>
@@ -666,18 +681,16 @@ fn bazaar_tab(state: RwSignal<GameState>, toast: RwSignal<String>) -> View {
 
 fn profile_tab(state: RwSignal<GameState>, _toast: RwSignal<String>) -> View {
     view! {
-        <article class="profile-card">
-            <div class="hero-card green" style="box-shadow:none;border:0">
-                <div class="hero-row">
-                    <div class="hero-icon">"人"</div>
-                    <div>
-                        <h2 class="section-title">{move || state.with(|s| s.player.nickname.clone())}</h2>
-                        <p class="muted">{move || state.with(|s| format!("庄园护照账号 ID: #{}", s.player.user_id.replace("u_", "")))}</p>
-                        <span class="tag warn">{move || state.with(|s| format!("等级 {}", s.player.level))}</span>
-                    </div>
+        <div class="hero-card green profile-hero">
+            <div class="hero-row">
+                <div class="hero-icon">"人"</div>
+                <div>
+                    <h2 class="section-title">{move || state.with(|s| s.player.nickname.clone())}</h2>
+                    <p class="muted">{move || state.with(|s| format!("庄园护照账号 ID: #{}", s.player.user_id.replace("u_", "")))}</p>
+                    <span class="tag warn">{move || state.with(|s| format!("等级 {}", s.player.level))}</span>
                 </div>
             </div>
-        </article>
+        </div>
         <article class="profile-card card">
             <h2 class="section-title">"游戏模块生涯历史最高积分"</h2>
             <div class="card-list">
@@ -767,6 +780,7 @@ fn Game2048Overlay(
                             let score = game.with(|g| g.score);
                             open_game.set(false);
                             run_action(state, toast, Action::FinishGame("2048".into(), score));
+                            game.set(Game2048::new());
                         }
                         type="button"
                     >

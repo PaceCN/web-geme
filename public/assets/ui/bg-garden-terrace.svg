@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="360" viewBox="0 0 960 360" role="img" aria-label="garden terrace background">
+  <rect width="960" height="360" fill="#dcefd8"/>
+  <path d="M0 260 C150 210 250 235 390 205 C560 168 700 194 960 130 L960 360 L0 360Z" fill="#7fb56c"/>
+  <path d="M0 300 C190 260 350 285 510 245 C670 205 790 238 960 190 L960 360 L0 360Z" fill="#477d4c"/>
+  <path d="M0 138 C120 88 230 98 340 58 C500 0 630 36 760 72 C830 92 890 82 960 54 L960 165 C780 212 650 157 500 178 C320 203 185 173 0 232Z" fill="#f5d889" opacity=".65"/>
+  <rect x="72" y="76" width="178" height="106" rx="14" fill="#fff8df"/>
+  <path d="M92 180 L230 180 L204 108 L118 108Z" fill="#915b37"/>
+  <path d="M112 78 L206 78 L248 114 L70 114Z" fill="#b64d39"/>
+  <rect x="142" y="130" width="38" height="50" rx="5" fill="#5f3d2b"/>
+  <circle cx="790" cy="106" r="52" fill="#f3c45f"/>
+  <circle cx="806" cy="88" r="20" fill="#ffe8a3" opacity=".55"/>
+  <g fill="#2f6d3e" opacity=".8">
+    <circle cx="328" cy="155" r="18"/>
+    <circle cx="360" cy="138" r="25"/>
+    <circle cx="392" cy="158" r="20"/>
+    <rect x="356" y="150" width="12" height="54"/>
+  </g>
+  <g fill="#8a6f4f" opacity=".6">
+    <path d="M525 260 C580 225 630 225 690 260 L690 285 L525 285Z"/>
+    <path d="M710 232 C760 202 805 205 858 236 L858 260 L710 260Z"/>
+  </g>
+</svg>
