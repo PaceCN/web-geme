@@ -1,7 +1,7 @@
 use leptos::*;
 use serde::{Deserialize, Serialize};
 use wasm_bindgen::{JsCast, JsValue};
-use web_sys::{CanvasRenderingContext2d, HtmlCanvasElement, PointerEvent, Storage};
+use web_sys::{CanvasRenderingContext2d, HtmlCanvasElement, HtmlElement, PointerEvent, Storage};
 
 const STORAGE_KEY: &str = "huayuan_rust_web_demo_v1";
 
@@ -148,6 +148,7 @@ fn main() {
     if let Some(root) = web_sys::window()
         .and_then(|window| window.document())
         .and_then(|document| document.get_element_by_id("app"))
+        .and_then(|element| element.dyn_into::<HtmlElement>().ok())
     {
         root.set_inner_html("");
         mount_to(root, || view! { <App /> });
