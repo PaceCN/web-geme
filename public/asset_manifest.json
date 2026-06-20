@@ -1,0 +1,18 @@
+{
+  "version": "0.1.0",
+  "scene": {
+    "width": 390,
+    "height": 320,
+    "renderer": "canvas-2d"
+  },
+  "hotspots": [
+    { "id": "decor_shop", "type": "inventory", "name": "主屋仓库", "x": 10, "y": 40, "width": 120, "height": 110, "action": "open_inventory_panel" },
+    { "id": "customer_001", "type": "customer", "name": "神秘访客", "x": 150, "y": 120, "width": 90, "height": 110, "action": "interact_customer" },
+    { "id": "order_board", "type": "order_board", "name": "订单公告栏", "x": 280, "y": 140, "width": 110, "height": 110, "action": "open_order_panel" },
+    { "id": "well_001", "type": "well", "name": "神奇泉水", "x": 40, "y": 160, "width": 90, "height": 95, "action": "action_draw_water" },
+    { "id": "plot_001", "type": "plot", "name": "地块 1", "x": 120, "y": 280, "width": 100, "height": 100, "action": "open_plot_panel" },
+    { "id": "plot_002", "type": "plot", "name": "地块 2", "x": 240, "y": 280, "width": 100, "height": 100, "action": "open_plot_panel" },
+    { "id": "plot_003", "type": "plot", "name": "地块 3", "x": 120, "y": 400, "width": 100, "height": 100, "action": "open_plot_panel" },
+    { "id": "plot_004", "type": "plot", "name": "地块 4", "x": 240, "y": 400, "width": 100, "height": 100, "action": "open_plot_panel" }
+  ]
+}

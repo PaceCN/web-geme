@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#2f6d3e" />
+    <meta name="description" content="庄园物语 Rust + WebAssembly 手机端测试版" />
+    <title>庄园物语 Rust Web Demo</title>
+    <link rel="manifest" href="public/manifest.webmanifest" />
+    <link rel="icon" href="public/icons/icon.svg" type="image/svg+xml" />
+    <link data-trunk rel="css" href="styles.css" />
+    <link data-trunk rel="copy-file" href="_headers" />
+    <link data-trunk rel="copy-file" href="_redirects" />
+    <link data-trunk rel="copy-dir" href="public" />
+    <link data-trunk rel="rust" href="Cargo.toml" />
+  </head>
+  <body>
+    <div id="app">
+      <div class="boot-screen">
+        <strong>庄园物语正在加载</strong>
+        <span>如果一直停在这里，请确认 Cloudflare Pages 的输出目录是 dist。</span>
+      </div>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,19 @@
+{
+  "name": "庄园物语 Rust Web Demo",
+  "short_name": "庄园物语",
+  "description": "Rust + WebAssembly 手机端点击式花园经营游戏测试版。",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f7f5ec",
+  "theme_color": "#2f6d3e",
+  "icons": [
+    {
+      "src": "icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
