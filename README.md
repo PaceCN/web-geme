@@ -45,10 +45,14 @@ trunk serve --open
 Cloudflare Pages 可以这样配：
 
 ```text
-Project root: 0.0.1
+Project root: 留空 / 仓库根目录
 Build command: bash scripts/cloudflare-pages-build.sh
 Build output directory: dist
 ```
+
+如果你用 `sync-github.cmd` 上传时选择的是 `0.0.1 目录`，那么 GitHub 仓库根目录已经是本项目目录，Cloudflare Pages 的 `Project root` 应该留空。
+
+如果你上传的是整个工作区，并且 GitHub 仓库里还能看到外层的 `0.0.1/` 文件夹，那么 `Project root` 才填写 `0.0.1`。
 
 注意不要把输出目录配置成 `0.0.1` 或仓库根目录。`index.html` 是 Trunk 源入口，只有构建后的 `dist/index.html` 才会自动注入 WASM/JS 脚本。
 
