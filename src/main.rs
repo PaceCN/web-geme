@@ -1,68 +1,16 @@
 use leptos::*;
-use serde::{Deserialize, Serialize};
 use wasm_bindgen::{JsCast, JsValue};
 use web_sys::{CanvasRenderingContext2d, HtmlCanvasElement, HtmlElement, PointerEvent, Storage};
 
+mod models;
+mod modules;
+
+use models::{GameState, InventoryItem, Order, Player, Requirement, Task};
+use modules::game_2048::{Game2048, Game2048Overlay};
+
 const STORAGE_KEY: &str = "huayuan_rust_web_demo_v1";
-
-#[derive(Clone, Serialize, Deserialize)]
-struct Player {
-    user_id: String,
-    nickname: String,
-    level: i32,
-    exp: i32,
-    coins: i32,
-    gems: i32,
-    current_stamina: i32,
-    max_stamina: i32,
-    score_2048: i32,
-    score_match3: i32,
-    score_make10: i32,
-}
-
-#[derive(Clone, Serialize, Deserialize)]
-struct InventoryItem {
-    item_id: String,
-    count: i32,
-    name: String,
-    item_type: String,
-}
-
-#[derive(Clone, Serialize, Deserialize)]
-struct Requirement {
-    item_id: String,
-    count: i32,
-}
-
-#[derive(Clone, Serialize, Deserialize)]
-struct Order {
-    order_id: String,
-    status: String,
-    title: String,
-    requirements: Vec<Requirement>,
-    coins_reward: i32,
-    exp_reward: i32,
-}
-
-#[derive(Clone, Serialize, Deserialize)]
-struct Task {
-    task_id: String,
-    title: String,
-    description: String,
-    target_progress: i32,
-    current_progress: i32,
-    claimed: bool,
-    task_type: String,
-}
-
-#[derive(Clone, Serialize, Deserialize)]
-struct GameState {
-    player: Player,
-    inventory: Vec<InventoryItem>,
-    orders: Vec<Order>,
-    tasks: Vec<Task>,
-    transactions: Vec<String>,
-}
+const AD_STAMINA_REWARD: i32 = 8;
+const AD_DAILY_LIMIT: i32 = 6;
 
 #[derive(Clone)]
 struct ShopItem {
@@ -92,18 +40,11 @@ struct Hotspot {
     h: f64,
 }
 
-#[derive(Clone, Serialize, Deserialize)]
-struct Game2048 {
-    board: Vec<i32>,
-    score: i32,
-    moves: i32,
-    over: bool,
-}
-
 #[derive(Clone)]
 enum Action {
     Purchase(String),
     Drink(String),
+    WatchAdRestore,
     SubmitOrder(String),
     ExecuteTask(String),
     ClaimTask(String),
@@ -167,10 +108,17 @@ fn App() -> impl IntoView {
     let toast = create_rw_signal(String::new());
     let open_game = create_rw_signal(false);
     let game = create_rw_signal(Game2048::new());
-    let drag_start = create_rw_signal::<Option<(f64, f64)>>(None);
+    let game_2048_finish_score = create_rw_signal::<Option<i32>>(None);
 
     create_effect(move |_| {
         state.with(save_state);
+    });
+
+    create_effect(move |_| {
+        if let Some(score) = game_2048_finish_score.get() {
+            game_2048_finish_score.set(None);
+            run_action(state, toast, Action::FinishGame("2048".into(), score));
+        }
     });
 
     let content = move || match active_tab.get() {
@@ -183,7 +131,7 @@ fn App() -> impl IntoView {
 
     view! {
         <main class="app-shell">
-            <TopStatus state=state />
+            <TopStatus state=state toast=toast />
             <section class="content-shell">
                 <div class="tab-page">
                     {move || if active_tab.get() == Tab::Chores {
@@ -210,24 +158,26 @@ fn App() -> impl IntoView {
             }
         }}
 
-        {move || if open_game.get() {
-            view! {
-                <Game2048Overlay
-                    state=state
-                    toast=toast
-                    open_game=open_game
-                    game=game
-                    drag_start=drag_start
-                />
-            }.into_view()
-        } else {
-            view! {}.into_view()
+        {move || {
+            if open_game.get() {
+                let best_score = state.with(|s| s.player.score_2048);
+                view! {
+                    <Game2048Overlay
+                        open_game=open_game
+                        game=game
+                        best_score=best_score
+                        finish_score=game_2048_finish_score
+                    />
+                }.into_view()
+            } else {
+                view! {}.into_view()
+            }
         }}
     }
 }
 
 #[component]
-fn TopStatus(state: RwSignal<GameState>) -> impl IntoView {
+fn TopStatus(state: RwSignal<GameState>, toast: RwSignal<String>) -> impl IntoView {
     view! {
         <header class="top-status">
             <div class="top-main">
@@ -260,6 +210,22 @@ fn TopStatus(state: RwSignal<GameState>) -> impl IntoView {
                         <i style=move || state.with(|s| format!("width:{}%", percent(s.player.exp, s.player.level * 100)))></i>
                     </div>
                 </div>
+            </div>
+            <div class="ad-restore-bar">
+                <div>
+                    <strong>"广告补给站"</strong>
+                    <span>{move || state.with(|s| {
+                        let used = normalized_ad_claims(&s.player);
+                        format!("今日剩余 {} 次，单次恢复 {} 体力", (AD_DAILY_LIMIT - used).max(0), AD_STAMINA_REWARD)
+                    })}</span>
+                </div>
+                <button
+                    class="btn ad-btn"
+                    on:click=move |_| run_action(state, toast, Action::WatchAdRestore)
+                    type="button"
+                >
+                    "看广告恢复"
+                </button>
             </div>
         </header>
     }
@@ -721,77 +687,6 @@ fn profile_tab(state: RwSignal<GameState>, _toast: RwSignal<String>) -> View {
     }.into_view()
 }
 
-#[component]
-fn Game2048Overlay(
-    state: RwSignal<GameState>,
-    toast: RwSignal<String>,
-    open_game: RwSignal<bool>,
-    game: RwSignal<Game2048>,
-    drag_start: RwSignal<Option<(f64, f64)>>,
-) -> impl IntoView {
-    view! {
-        <div class="game-modal">
-            <section class="game-panel">
-                <div class="game-head">
-                    <div>
-                        <h2 class="section-title">"2048 扫除拼图"</h2>
-                        <p class="muted">"合并方块，结算枯草和落叶"</p>
-                    </div>
-                    <button class="close" on:click=move |_| open_game.set(false) type="button">"×"</button>
-                </div>
-                <div class="score-row">
-                    <div class="score-chip"><small>"本局"</small><strong>{move || game.with(|g| g.score)}</strong></div>
-                    <div class="score-chip"><small>"最高"</small><strong>{move || state.with(|s| s.player.score_2048)}</strong></div>
-                    <div class="score-chip"><small>"步数"</small><strong>{move || game.with(|g| g.moves)}</strong></div>
-                </div>
-                <div
-                    class="board"
-                    on:pointerdown=move |event: PointerEvent| drag_start.set(Some((event.client_x() as f64, event.client_y() as f64)))
-                    on:pointerup=move |event: PointerEvent| {
-                        if let Some((x, y)) = drag_start.get() {
-                            let dx = event.client_x() as f64 - x;
-                            let dy = event.client_y() as f64 - y;
-                            drag_start.set(None);
-                            if dx.abs().max(dy.abs()) > 26.0 {
-                                let direction = if dx.abs() > dy.abs() {
-                                    if dx > 0.0 { "right" } else { "left" }
-                                } else if dy > 0.0 { "down" } else { "up" };
-                                game.update(|g| g.move_dir(direction));
-                            }
-                        }
-                    }
-                >
-                    {move || game.with(|g| {
-                        g.board.iter().map(|value| {
-                            let class = if *value == 2 || *value == 4 { "tile low" } else { "tile" };
-                            view! {
-                                <div class=class style=format!("background:{}", tile_color(*value))>
-                                    {if *value == 0 { "".to_string() } else { value.to_string() }}
-                                </div>
-                            }
-                        }).collect_view()
-                    })}
-                </div>
-                <div class="actions">
-                    <button class="btn secondary" on:click=move |_| game.set(Game2048::new()) type="button">"重开"</button>
-                    <button
-                        class="btn"
-                        on:click=move |_| {
-                            let score = game.with(|g| g.score);
-                            open_game.set(false);
-                            run_action(state, toast, Action::FinishGame("2048".into(), score));
-                            game.set(Game2048::new());
-                        }
-                        type="button"
-                    >
-                        "结算奖励"
-                    </button>
-                </div>
-            </section>
-        </div>
-    }
-}
-
 fn run_action(state: RwSignal<GameState>, toast: RwSignal<String>, action: Action) {
     let mut message = String::new();
     state.update(|s| {
@@ -828,6 +723,26 @@ fn apply_action(state: &mut GameState, action: Action) -> String {
             }
             state.player.current_stamina = (state.player.current_stamina + restore).min(state.player.max_stamina);
             format!("体力提升 {} 点。", restore)
+        }
+        Action::WatchAdRestore => {
+            normalize_ad_claim_window(&mut state.player);
+            if state.player.current_stamina >= state.player.max_stamina {
+                return "体力已满，暂时不需要广告补给。".into();
+            }
+            if state.player.ad_stamina_claims_today >= AD_DAILY_LIMIT {
+                return "今日广告补给次数已用完，请明天再来。".into();
+            }
+            let before = state.player.current_stamina;
+            state.player.current_stamina =
+                (state.player.current_stamina + AD_STAMINA_REWARD).min(state.player.max_stamina);
+            state.player.ad_stamina_claims_today += 1;
+            let gained = state.player.current_stamina - before;
+            state.transactions.insert(0, format!("广告补给成功，体力 +{}。", gained));
+            format!(
+                "广告补给到账，体力 +{}，今日还可恢复 {} 次。",
+                gained,
+                (AD_DAILY_LIMIT - state.player.ad_stamina_claims_today).max(0)
+            )
         }
         Action::SubmitOrder(order_id) => {
             let Some(index) = state.orders.iter().position(|order| order.order_id == order_id) else {
@@ -969,6 +884,8 @@ fn seed_state() -> GameState {
             score_2048: 0,
             score_match3: 0,
             score_make10: 0,
+            ad_claim_date: today_key(),
+            ad_stamina_claims_today: 0,
         },
         inventory: vec![
             InventoryItem { item_id: "elixir_water".into(), count: 2, name: "黄金神水".into(), item_type: "elixir".into() },
@@ -1047,135 +964,6 @@ fn hotspots() -> Vec<Hotspot> {
         Hotspot { id: "plot_003", kind: "plot", name: "地块 3", x: 120.0, y: 400.0, w: 100.0, h: 100.0 },
         Hotspot { id: "plot_004", kind: "plot", name: "地块 4", x: 240.0, y: 400.0, w: 100.0, h: 100.0 },
     ]
-}
-
-impl Game2048 {
-    fn new() -> Self {
-        let mut game = Self { board: vec![0; 16], score: 0, moves: 0, over: false };
-        game.add_random_tile();
-        game.add_random_tile();
-        game
-    }
-
-    fn add_random_tile(&mut self) {
-        let empties: Vec<usize> = self
-            .board
-            .iter()
-            .enumerate()
-            .filter_map(|(index, value)| if *value == 0 { Some(index) } else { None })
-            .collect();
-        if empties.is_empty() {
-            return;
-        }
-        let pick = (js_sys::Math::random() * empties.len() as f64).floor() as usize;
-        self.board[empties[pick]] = if js_sys::Math::random() < 0.9 { 2 } else { 4 };
-    }
-
-    fn move_dir(&mut self, direction: &str) {
-        if self.over {
-            return;
-        }
-        let (next, gained) = match direction {
-            "left" => move_left(&self.board),
-            "right" => move_right(&self.board),
-            "up" => {
-                let transposed = transpose(&self.board);
-                let (moved, score) = move_left(&transposed);
-                (transpose(&moved), score)
-            }
-            "down" => {
-                let transposed = transpose(&self.board);
-                let (moved, score) = move_right(&transposed);
-                (transpose(&moved), score)
-            }
-            _ => (self.board.clone(), 0),
-        };
-        if next != self.board {
-            self.board = next;
-            self.score += gained;
-            self.moves += 1;
-            self.add_random_tile();
-            self.over = is_game_over(&self.board);
-        }
-    }
-}
-
-fn move_left(board: &[i32]) -> (Vec<i32>, i32) {
-    let mut next = Vec::with_capacity(16);
-    let mut score = 0;
-    for row in 0..4 {
-        let (line, gained) = slide_left(&board[row * 4..row * 4 + 4]);
-        next.extend(line);
-        score += gained;
-    }
-    (next, score)
-}
-
-fn move_right(board: &[i32]) -> (Vec<i32>, i32) {
-    let mut next = Vec::with_capacity(16);
-    let mut score = 0;
-    for row in 0..4 {
-        let mut line = board[row * 4..row * 4 + 4].to_vec();
-        line.reverse();
-        let (mut moved, gained) = slide_left(&line);
-        moved.reverse();
-        next.extend(moved);
-        score += gained;
-    }
-    (next, score)
-}
-
-fn slide_left(row: &[i32]) -> (Vec<i32>, i32) {
-    let non_zero: Vec<i32> = row.iter().copied().filter(|value| *value != 0).collect();
-    let mut result = Vec::new();
-    let mut score = 0;
-    let mut i = 0;
-    while i < non_zero.len() {
-        if i + 1 < non_zero.len() && non_zero[i] == non_zero[i + 1] {
-            let merged = non_zero[i] * 2;
-            result.push(merged);
-            score += merged;
-            i += 2;
-        } else {
-            result.push(non_zero[i]);
-            i += 1;
-        }
-    }
-    while result.len() < 4 {
-        result.push(0);
-    }
-    (result, score)
-}
-
-fn transpose(board: &[i32]) -> Vec<i32> {
-    let mut next = vec![0; 16];
-    for r in 0..4 {
-        for c in 0..4 {
-            next[c * 4 + r] = board[r * 4 + c];
-        }
-    }
-    next
-}
-
-fn is_game_over(board: &[i32]) -> bool {
-    if board.iter().any(|value| *value == 0) {
-        return false;
-    }
-    for r in 0..4 {
-        for c in 0..3 {
-            if board[r * 4 + c] == board[r * 4 + c + 1] {
-                return false;
-            }
-        }
-    }
-    for c in 0..4 {
-        for r in 0..3 {
-            if board[r * 4 + c] == board[(r + 1) * 4 + c] {
-                return false;
-            }
-        }
-    }
-    true
 }
 
 fn draw_scene(_state: &GameState, selected: &str) {
@@ -1314,6 +1102,32 @@ fn percent(value: i32, max: i32) -> i32 {
     if max <= 0 { 0 } else { ((value * 100) / max).clamp(0, 100) }
 }
 
+fn normalized_ad_claims(player: &Player) -> i32 {
+    if player.ad_claim_date == today_key() {
+        player.ad_stamina_claims_today
+    } else {
+        0
+    }
+}
+
+fn normalize_ad_claim_window(player: &mut Player) {
+    let today = today_key();
+    if player.ad_claim_date != today {
+        player.ad_claim_date = today;
+        player.ad_stamina_claims_today = 0;
+    }
+}
+
+fn today_key() -> String {
+    js_sys::Date::new_0()
+        .to_iso_string()
+        .as_string()
+        .unwrap_or_else(|| "1970-01-01T00:00:00.000Z".into())
+        .chars()
+        .take(10)
+        .collect()
+}
+
 fn item_name(item_id: &str) -> &'static str {
     match item_id {
         "elixir_water" => "黄金神水",
@@ -1403,22 +1217,4 @@ fn promo_tag(item_id: &str) -> &'static str {
 
 fn is_debris(item_id: &str) -> bool {
     matches!(item_id, "debris_weed" | "debris_leaves" | "estate_wood" | "spider_silk")
-}
-
-fn tile_color(value: i32) -> &'static str {
-    match value {
-        0 => "#cdc4ba",
-        2 => "#f7f0e7",
-        4 => "#ede0c8",
-        8 => "#f2b179",
-        16 => "#f59563",
-        32 => "#f67c5f",
-        64 => "#f65e3b",
-        128 => "#edcf72",
-        256 => "#edcc61",
-        512 => "#4f8f76",
-        1024 => "#4b73a8",
-        2048 => "#3f3a54",
-        _ => "#2f2a3d",
-    }
 }

@@ -11,7 +11,8 @@
 - 物资背包：药剂、徽章、废料材料、药剂使用恢复体力
 - 集市商店：老皮特官方商店、玩家市集买入、背包材料挂牌出售并扣 10% 手续费
 - 个人信息：账号卡、小游戏最高分、金币和体力总览
-- 2048：Rust 状态实现，支持手机滑动
+- 2048：已迁移到 `src/modules/game_2048.rs`，支持手机滑动和固定 4x4 棋盘
+- 广告补给站：前端已有广告恢复体力动作入口，后续接广告 SDK 成功回调即可
 - Canvas 2D：庄园场景占位和 Hotspot 点击跳转
 
 ## 技术结构
@@ -25,12 +26,19 @@
 ├── sucai.md                # 素材清单：分辨率、路径、替换说明
 ├── _headers                # Cloudflare Pages 响应头
 ├── _redirects              # Cloudflare Pages SPA 回退
+├── backend/                # Axum 后端和运营管理端原型
 ├── src/
-│   ├── main.rs             # Leptos 应用、状态分发、当前小游戏逻辑
-│   ├── models/             # 后续共享数据模型目录
-│   └── modules/            # 后续小游戏模块目录
+│   ├── main.rs             # Leptos 主框架、状态信号、动作分发
+│   ├── models/             # 共享数据模型
+│   └── modules/            # 小游戏模块，当前包含 game_2048.rs
 └── public/                 # PWA、asset_manifest、素材和 Cloudflare Pages 文件
 ```
+
+## 主框架原则
+
+这个项目按固定主框架推进：主界面只负责玩家状态、导航、任务、背包、商店、结算入口；所有小游戏必须以 `src/modules/` 模块方式接入，模块内部自己处理玩法输入和局内状态，结算时只把 `game_id + score/rewards` 交回主框架。
+
+收益模式当前只考虑广告，不考虑充值。因此体力恢复优先走“激励广告成功后发奖励”的链路，广告配置和补发由 `backend/` 管理端控制。
 
 ## 主体框架完整性
 
@@ -40,15 +48,17 @@
 - 居民契约：订单列表、材料校验、交付奖励
 - 庄园内务：清扫任务、任务进度、小游戏入口
 - 2048 小游戏：4x4 固定棋盘、手机滑动、结算奖励、结算后自动重开
+- 广告恢复体力：顶部补给入口、每日次数限制、体力上限校验
 - 物资背包：物品展示、药剂使用
 - 集市商店：官方商店、玩家市集买入/挂牌
 - 个人信息：玩家资产、体力、小游戏最高分
-- 本地状态持久化：`localStorage`
+- 前端本地状态持久化：`localStorage`
 - Cloudflare Pages 静态部署脚本
+- Axum 后端管理端原型：广告策略、玩家列表、后台补发体力、审计日志
 - PWA 基础文件：manifest、service worker、headers、redirects
 - 素材目录：`public/assets/`
 
-当前还没有真实后端数据，所有数据仍在前端本地模拟。后续接入 Axum 后端时，应优先替换初始化状态和动作提交逻辑。
+当前线上静态前端仍使用本地模拟状态。`backend/` 已经提供后端和管理端骨架，后续正式联机时，应优先替换初始化状态、动作提交逻辑和广告 SDK 回调发奖逻辑。
 
 ## 本地运行
 
@@ -86,14 +96,28 @@ Cloudflare Pages 默认构建镜像里可能没有 `rustup`。`scripts/cloudflar
 
 ## 后端接入
 
-当前前端是本地状态版本，逻辑在 `src/main.rs`。后续 Axum 后端稳定后，可以把 `run_action` 和初始化状态替换为：
+当前前端是本地状态版本，动作分发在 `src/main.rs`。后续 Axum 后端稳定后，可以把 `run_action` 和初始化状态替换为：
 
 ```text
 GET  /api/v1/bootstrap
 POST /api/v1/garden/action
+POST /api/v1/ads/reward
 ```
 
 接口建议见 `API_CONTRACT.md`。
+
+后端原型本地运行：
+
+```powershell
+cd backend
+cargo run
+```
+
+管理端地址：
+
+```text
+http://127.0.0.1:8787/admin
+```
 
 ## 后续游戏模块接口
 
