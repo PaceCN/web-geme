@@ -12,6 +12,8 @@
 - 集市商店：老皮特官方商店、玩家市集买入、背包材料挂牌出售并扣 10% 手续费
 - 个人信息：账号卡、小游戏最高分、金币和体力总览
 - 2048：已迁移到 `src/modules/game_2048.rs`，支持手机滑动和固定 4x4 棋盘
+- 开心消消乐：`src/modules/match3.rs`，6x6 相邻交换三连消除
+- 一不小心就到十：`src/modules/make10.rs`，4x4 连选相邻数字凑 10
 - 广告补给站：前端已有广告恢复体力动作入口，后续接广告 SDK 成功回调即可
 - Canvas 2D：庄园场景占位和 Hotspot 点击跳转
 
@@ -24,6 +26,11 @@
 ├── index.html              # Trunk 入口
 ├── styles.css              # 手机竖屏样式
 ├── sucai.md                # 素材清单：分辨率、路径、替换说明
+├── SECURITY.md             # 安全边界和正式部署补强项
+├── GAME_UI_GUIDE.md        # 游戏化 UI 方向
+├── DOCKER.md               # Docker 本地/服务器测试说明
+├── docker-compose.yml      # 一键启动前端和后端
+├── Dockerfile.frontend     # 前端构建和 Nginx 托管
 ├── _headers                # Cloudflare Pages 响应头
 ├── _redirects              # Cloudflare Pages SPA 回退
 ├── backend/                # Axum 后端和运营管理端原型
@@ -48,17 +55,19 @@
 - 居民契约：订单列表、材料校验、交付奖励
 - 庄园内务：清扫任务、任务进度、小游戏入口
 - 2048 小游戏：4x4 固定棋盘、手机滑动、结算奖励、结算后自动重开
+- 开心消消乐：6x6 棋盘、相邻交换、三连消除、步数限制
+- 一不小心就到十：4x4 棋盘、相邻连选、凑 10 清除、步数限制
 - 广告恢复体力：顶部补给入口、每日次数限制、体力上限校验
 - 物资背包：物品展示、药剂使用
 - 集市商店：官方商店、玩家市集买入/挂牌
 - 个人信息：玩家资产、体力、小游戏最高分
 - 前端本地状态持久化：`localStorage`
 - Cloudflare Pages 静态部署脚本
-- Axum 后端管理端原型：广告策略、玩家列表、后台补发体力、审计日志
+- Axum 后端管理端原型：登录、后台账户、广告策略、小游戏开关、玩家列表、后台补发体力、审计日志
 - PWA 基础文件：manifest、service worker、headers、redirects
 - 素材目录：`public/assets/`
 
-当前线上静态前端仍使用本地模拟状态。`backend/` 已经提供后端和管理端骨架，后续正式联机时，应优先替换初始化状态、动作提交逻辑和广告 SDK 回调发奖逻辑。
+当前线上静态前端仍使用本地模拟状态。`backend/` 已经提供独立 Axum 后端和管理端，但 Cloudflare Pages 不会运行后端服务；后端需要单独部署。后续正式联机时，应优先替换初始化状态、动作提交逻辑和广告 SDK 回调发奖逻辑。
 
 ## 本地运行
 
@@ -71,6 +80,24 @@ trunk serve --open
 ```
 
 当前这台环境没有 `cargo/rustc`，所以我没法在本机完成编译验证。
+
+## Docker 测试
+
+在 `0.0.1` 目录执行：
+
+```powershell
+docker compose up --build
+```
+
+访问：
+
+```text
+前端游戏：http://localhost:8080
+后台管理：http://localhost:8080/admin
+后端健康检查：http://localhost:8787/health
+```
+
+详细说明见 `DOCKER.md`。
 
 ## Cloudflare Pages
 
@@ -100,6 +127,8 @@ Cloudflare Pages 默认构建镜像里可能没有 `rustup`。`scripts/cloudflar
 
 ```text
 GET  /api/v1/bootstrap
+GET  /api/v1/bootstrap/:user_id
+GET  /api/v1/game-switches
 POST /api/v1/garden/action
 POST /api/v1/ads/reward
 ```
@@ -118,6 +147,14 @@ cargo run
 ```text
 http://127.0.0.1:8787/admin
 ```
+
+后台默认本地测试账号：
+
+```text
+admin / admin123!
+```
+
+正式部署必须设置 `HUAYUAN_ADMIN_USER` 和 `HUAYUAN_ADMIN_PASSWORD`。
 
 ## 后续游戏模块接口
 

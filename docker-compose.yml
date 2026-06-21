@@ -1,0 +1,21 @@
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    environment:
+      HUAYUAN_BACKEND_HOST: 0.0.0.0
+      HUAYUAN_BACKEND_PORT: 8787
+      HUAYUAN_ADMIN_USER: admin
+      HUAYUAN_ADMIN_PASSWORD: admin123!
+    ports:
+      - "8787:8787"
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    depends_on:
+      - backend
+    ports:
+      - "8080:80"

@@ -7,6 +7,8 @@ mod modules;
 
 use models::{GameState, InventoryItem, Order, Player, Requirement, Task};
 use modules::game_2048::{Game2048, Game2048Overlay};
+use modules::make10::{Make10Game, Make10Overlay};
+use modules::match3::{Match3Game, Match3Overlay};
 
 const STORAGE_KEY: &str = "huayuan_rust_web_demo_v1";
 const AD_STAMINA_REWARD: i32 = 8;
@@ -106,9 +108,15 @@ fn App() -> impl IntoView {
     let shop_subtab = create_rw_signal(0_i32);
     let selected_hotspot = create_rw_signal(String::new());
     let toast = create_rw_signal(String::new());
-    let open_game = create_rw_signal(false);
-    let game = create_rw_signal(Game2048::new());
+    let open_2048 = create_rw_signal(false);
+    let game_2048 = create_rw_signal(Game2048::new());
     let game_2048_finish_score = create_rw_signal::<Option<i32>>(None);
+    let open_match3 = create_rw_signal(false);
+    let game_match3 = create_rw_signal(Match3Game::new());
+    let game_match3_finish_score = create_rw_signal::<Option<i32>>(None);
+    let open_make10 = create_rw_signal(false);
+    let game_make10 = create_rw_signal(Make10Game::new());
+    let game_make10_finish_score = create_rw_signal::<Option<i32>>(None);
 
     create_effect(move |_| {
         state.with(save_state);
@@ -121,9 +129,33 @@ fn App() -> impl IntoView {
         }
     });
 
+    create_effect(move |_| {
+        if let Some(score) = game_match3_finish_score.get() {
+            game_match3_finish_score.set(None);
+            run_action(state, toast, Action::FinishGame("match3".into(), score));
+        }
+    });
+
+    create_effect(move |_| {
+        if let Some(score) = game_make10_finish_score.get() {
+            game_make10_finish_score.set(None);
+            run_action(state, toast, Action::FinishGame("make10".into(), score));
+        }
+    });
+
     let content = move || match active_tab.get() {
         Tab::Orders => orders_tab(state, toast),
-        Tab::Chores => chores_tab(state, toast, chores_subtab, open_game, game),
+        Tab::Chores => chores_tab(
+            state,
+            toast,
+            chores_subtab,
+            open_2048,
+            game_2048,
+            open_match3,
+            game_match3,
+            open_make10,
+            game_make10,
+        ),
         Tab::Backpack => backpack_tab(state, toast, active_tab),
         Tab::Shop => shop_tab(state, toast, shop_subtab),
         Tab::Profile => profile_tab(state, toast),
@@ -159,14 +191,46 @@ fn App() -> impl IntoView {
         }}
 
         {move || {
-            if open_game.get() {
+            if open_2048.get() {
                 let best_score = state.with(|s| s.player.score_2048);
                 view! {
                     <Game2048Overlay
-                        open_game=open_game
-                        game=game
+                        open_game=open_2048
+                        game=game_2048
                         best_score=best_score
                         finish_score=game_2048_finish_score
+                    />
+                }.into_view()
+            } else {
+                view! {}.into_view()
+            }
+        }}
+
+        {move || {
+            if open_match3.get() {
+                let best_score = state.with(|s| s.player.score_match3);
+                view! {
+                    <Match3Overlay
+                        open_game=open_match3
+                        game=game_match3
+                        best_score=best_score
+                        finish_score=game_match3_finish_score
+                    />
+                }.into_view()
+            } else {
+                view! {}.into_view()
+            }
+        }}
+
+        {move || {
+            if open_make10.get() {
+                let best_score = state.with(|s| s.player.score_make10);
+                view! {
+                    <Make10Overlay
+                        open_game=open_make10
+                        game=game_make10
+                        best_score=best_score
+                        finish_score=game_make10_finish_score
                     />
                 }.into_view()
             } else {
@@ -366,8 +430,12 @@ fn chores_tab(
     state: RwSignal<GameState>,
     toast: RwSignal<String>,
     subtab: RwSignal<i32>,
-    open_game: RwSignal<bool>,
-    game: RwSignal<Game2048>,
+    open_2048: RwSignal<bool>,
+    game_2048: RwSignal<Game2048>,
+    open_match3: RwSignal<bool>,
+    game_match3: RwSignal<Match3Game>,
+    open_make10: RwSignal<bool>,
+    game_make10: RwSignal<Make10Game>,
 ) -> View {
     view! {
         <div class="subtabs">
@@ -375,7 +443,16 @@ fn chores_tab(
             <button class=move || if subtab.get() == 1 { "subtab active" } else { "subtab" } on:click=move |_| subtab.set(1) type="button">"玩法说明"</button>
         </div>
         {move || if subtab.get() == 0 {
-            chores_work_tab(state, toast, open_game, game)
+            chores_work_tab(
+                state,
+                toast,
+                open_2048,
+                game_2048,
+                open_match3,
+                game_match3,
+                open_make10,
+                game_make10,
+            )
         } else {
             chores_help_tab()
         }}
@@ -385,16 +462,21 @@ fn chores_tab(
 fn chores_work_tab(
     state: RwSignal<GameState>,
     toast: RwSignal<String>,
-    open_game: RwSignal<bool>,
-    game: RwSignal<Game2048>,
+    open_2048: RwSignal<bool>,
+    game_2048: RwSignal<Game2048>,
+    open_match3: RwSignal<bool>,
+    game_match3: RwSignal<Match3Game>,
+    open_make10: RwSignal<bool>,
+    game_make10: RwSignal<Make10Game>,
 ) -> View {
     view! {
         <div class="hero-card green chores-hero">
             <h2 class="section-title">"互动深度清洁秘境（趣味小游戏）"</h2>
             <p class="muted">"觉得精力值不够用了？挑战免费益智除扫小游戏，免消耗精力，大量掉落指定原材料。"</p>
         </div>
-        <div class="card-list">
-            <article class="card row-card">
+        <div class="section-title">"互动小游戏模块"</div>
+        <div class="card-list minigame-grid">
+            <article class="card row-card minigame-card">
                 <div class="tile-icon">"2048"</div>
                 <div>
                     <div class="name">"2048 扫除拼图"</div>
@@ -404,31 +486,49 @@ fn chores_work_tab(
                 <button
                     class="btn"
                     on:click=move |_| {
-                        game.set(Game2048::new());
-                        open_game.set(true);
+                        game_2048.set(Game2048::new());
+                        open_2048.set(true);
                     }
                     type="button"
                 >
                     "立即扫除"
                 </button>
             </article>
-            <article class="card row-card">
+            <article class="card row-card minigame-card">
                 <div class="tile-icon">"落"</div>
                 <div>
                     <div class="name">"开心消消乐（扫叶扫蛛网）"</div>
                     <p class="muted">"对应原材料：金色落叶 / 坚韧蛛丝"</p>
                     <span class="tag warn">{move || state.with(|s| format!("历史最高分: {}", s.player.score_match3))}</span>
                 </div>
-                <button class="btn blue" on:click=move |_| run_action(state, toast, Action::FinishGame("match3".into(), 60)) type="button">"立即滑消"</button>
+                <button
+                    class="btn blue"
+                    on:click=move |_| {
+                        game_match3.set(Match3Game::new());
+                        open_match3.set(true);
+                    }
+                    type="button"
+                >
+                    "立即滑消"
+                </button>
             </article>
-            <article class="card row-card">
+            <article class="card row-card minigame-card">
                 <div class="tile-icon">"10"</div>
                 <div>
                     <div class="name">"一不小心就到十（木柴合数）"</div>
                     <p class="muted">"对应原材料：修剪碎木 / 坚韧蛛丝"</p>
                     <span class="tag warn">{move || state.with(|s| format!("历史最高分: {}", s.player.score_make10))}</span>
                 </div>
-                <button class="btn orange" on:click=move |_| run_action(state, toast, Action::FinishGame("make10".into(), 50)) type="button">"立即清点"</button>
+                <button
+                    class="btn orange"
+                    on:click=move |_| {
+                        game_make10.set(Make10Game::new());
+                        open_make10.set(true);
+                    }
+                    type="button"
+                >
+                    "立即清点"
+                </button>
             </article>
         </div>
         <div class="section-title">"常规基础清扫委托"</div>

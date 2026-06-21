@@ -16,6 +16,27 @@
 }
 ```
 
+当前后端原型路径：
+
+```text
+GET /api/v1/bootstrap/:user_id
+```
+
+## GET /api/v1/game-switches
+
+返回玩家侧可见的小游戏开关：
+
+```json
+[
+  {
+    "game_id": "match3",
+    "title": "开心消消乐",
+    "enabled": true,
+    "maintenance_message": ""
+  }
+]
+```
+
 ## POST /api/v1/garden/action
 
 请求：
@@ -25,6 +46,17 @@
   "actionId": "submit_order",
   "targetId": "order_001",
   "payload": {}
+}
+```
+
+小游戏结算请求示例：
+
+```json
+{
+  "user_id": "u_10001",
+  "action_id": "finish_minigame",
+  "target_id": "match3",
+  "score": 360
 }
 ```
 
@@ -85,11 +117,21 @@ finish_minigame
 
 ```text
 GET  /admin
+POST /api/admin/login
 GET  /api/admin/dashboard
+GET  /api/admin/accounts
 GET  /api/admin/ad-policy
 PUT  /api/admin/ad-policy
+GET  /api/admin/game-switches
+POST /api/admin/game-switches/:game_id
 GET  /api/admin/players
 POST /api/admin/players/:user_id/stamina
+```
+
+除 `/api/admin/login` 外，管理端 API 需要请求头：
+
+```text
+x-admin-token: 登录返回的 token
 ```
 
 生产版本必须给 `/api/admin/*` 增加管理员登录鉴权和操作审计落库。
